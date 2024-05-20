@@ -16,13 +16,11 @@ public struct XProjParser {
         let currentContent = content[currentIndex..<endIndex]
         var results: [Any] = []
         while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
-            if currentIndex != result.range.lowerBound {
-                let skipped = currentContent[currentIndex..<result.range.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
-                if !skipped.isEmpty, !Set([";"]).contains(skipped) {
-                    // TODO: Colans should probably be part of objects to determine where the actual end of a property is.
-                    // TODO: Commas should probably be part of array values to figure out where the actual end of an element is
-                    throw Error.unableToParse
-                }
+            if 
+                currentIndex != result.range.lowerBound,
+                !currentContent.containsWhitespace(in: currentIndex..<result.range.lowerBound)
+            {
+                throw Error.unableToParse
             }
             if let idString = result.id {
                 let comment = result.idComment
@@ -59,6 +57,7 @@ public struct XProjParser {
                 let element = XProjObject(key: key, elements: elements)
                 results.append(element)
                 currentIndex = objectRange.upperBound
+                try currentContent.advance(until: ";", index: &currentIndex)
             } else if let arrayStart = result.arrayStart, let key = result.key {
                 guard let arrayRange = (try? ParenthesesParser().nextFrame(
                     currentContent,
@@ -72,6 +71,7 @@ public struct XProjParser {
                 let element = XProjArray(key: key, elements: elements)
                 results.append(element)
                 currentIndex = arrayRange.upperBound
+                try currentContent.advance(until: ";", index: &currentIndex)
             } else if let key = result.propertyKey, var stringValue = result.value, let whiteSpace = result.whiteSpace {
                 let stringValue = String(stringValue)
                 let value: Any
@@ -103,11 +103,11 @@ public struct XProjParser {
                 throw Error.unableToParse
             }
         }
-        if currentIndex < endIndex {
-            let skipped = currentContent[currentIndex..<endIndex].trimmingCharacters(in: .whitespacesAndNewlines)
-            if !skipped.isEmpty, !Set([";"]).contains(skipped) {
-                throw Error.unableToParse
-            }
+        if 
+            currentIndex < endIndex,
+            !currentContent.containsWhitespace(in: currentIndex..<endIndex)
+        {
+            throw Error.unableToParse
         }
         return results
     }
