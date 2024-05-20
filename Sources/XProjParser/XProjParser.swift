@@ -9,7 +9,11 @@ public struct XProjParser {
         case unableToParse
     }
 
-    public static func parse(content: Substring, range: Range<String.Index>) throws -> [Any] {
+    private let parser = ParenthesesParser()
+
+    public init() {}
+
+    public func parse(content: Substring, range: Range<String.Index>) throws -> [Any] {
         let regex = try RegexCompiler.shared.regex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
@@ -31,47 +35,33 @@ public struct XProjParser {
                 let comment = XProjComment(commentString)
                 results.append(comment)
                 currentIndex = result.range.upperBound
-            } else if result.rootObjectStart != nil {
-                guard let objectRange = (try? ParenthesesParser().nextFrame(
+            } else if
+                let frameStart = result.frameStart ?? result.rootObjectStart,
+                let frameStartChar = frameStart.first,
+                let frameType = FrameType(start: frameStartChar)
+            {
+                let frameStartIndex = currentContent.index(before: result.range.upperBound)
+                let frame = try parser.nextFrame(
                     currentContent,
-                    from: currentContent.index(before: result.range.upperBound),
-                    types: [.braces]
-                ))?.range else {
-                    throw Error.unableToParse
+                    from: frameStartIndex,
+                    types: [frameType]
+                )
+                let bodyRange = try frame.range.clipedBounds(for: currentContent)
+                let subElements: [Any]
+                if frameType.isParentheses {
+                    subElements = try parse(arrayContent: content[bodyRange], range: bodyRange)
+                } else {
+                    subElements = try parse(content: content[bodyRange], range: bodyRange)
                 }
-                let objectBodyRange = try objectRange.clipedBounds(for: currentContent)
-                let elements = try parse(content: content[objectBodyRange], range: objectBodyRange)
-                let root = XProjRoot(elements: elements)
-                results.append(root)
-                currentIndex = objectRange.upperBound
-            } else if let objectStart = result.objectStart, let key = result.key {
-                guard let objectRange = (try? ParenthesesParser().nextFrame(
-                    currentContent,
-                    from: currentContent.index(before: result.range.upperBound),
-                    types: [.braces]
-                ))?.range else {
-                    throw Error.unableToParse
+                currentIndex = frame.range.upperBound
+                let element: Any
+                if let key = result.key {
+                    element = XProjObject(key: key, elements: subElements)
+                    try currentContent.advance(until: ";", index: &currentIndex)
+                } else {
+                    element = XProjRoot(elements: subElements)
                 }
-                let objectBodyRange = try objectRange.clipedBounds(for: currentContent)
-                let elements = try parse(content: content[objectBodyRange], range: objectBodyRange)
-                let element = XProjObject(key: key, elements: elements)
                 results.append(element)
-                currentIndex = objectRange.upperBound
-                try currentContent.advance(until: ";", index: &currentIndex)
-            } else if let arrayStart = result.arrayStart, let key = result.key {
-                guard let arrayRange = (try? ParenthesesParser().nextFrame(
-                    currentContent,
-                    from: currentContent.index(before: result.range.upperBound),
-                    types: [.parentheses]
-                ))?.range else {
-                    throw Error.unableToParse
-                }
-                let arrayBodyRange = try arrayRange.clipedBounds(for: currentContent)
-                let elements = try parse(arrayContent: content[arrayBodyRange], range: arrayBodyRange)
-                let element = XProjArray(key: key, elements: elements)
-                results.append(element)
-                currentIndex = arrayRange.upperBound
-                try currentContent.advance(until: ";", index: &currentIndex)
             } else if let key = result.propertyKey, var stringValue = result.value, let whiteSpace = result.whiteSpace {
                 let stringValue = String(stringValue)
                 let value: Any
@@ -112,7 +102,7 @@ public struct XProjParser {
         return results
     }
 
-    static func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
+    func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
         let regex = try RegexCompiler.shared.arrayRegex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
@@ -132,11 +122,11 @@ public struct XProjParser {
             }
             currentIndex = result.range.upperBound
         }
-        if currentIndex < endIndex {
-            let skipped = currentContent[currentIndex..<endIndex].trimmingCharacters(in: .whitespacesAndNewlines)
-            if !skipped.isEmpty {
-                throw Error.unableToParse
-            }
+        if 
+            currentIndex < endIndex,
+            !currentContent.containsWhitespace(in: currentIndex..<endIndex)
+        {
+            throw Error.unableToParse
         }
         return results
     }

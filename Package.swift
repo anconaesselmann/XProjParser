@@ -16,7 +16,7 @@ let package = Package(
             targets: ["XProjParser"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/anconaesselmann/ParenthesesParser", from: "0.0.1")
+        .package(url: "https://github.com/anconaesselmann/ParenthesesParser", from: "0.0.2")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
