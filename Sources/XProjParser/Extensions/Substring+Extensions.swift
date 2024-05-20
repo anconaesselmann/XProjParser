@@ -8,6 +8,7 @@ extension Substring {
     enum Error: Swift.Error {
         case invalidIndex
         case notFond
+        case containsNoneWhitespace
     }
 
     func advance(until character: Character, index: inout String.Index) throws {
@@ -19,6 +20,20 @@ extension Substring {
         }
         let newIndex = self.index(after: foundIndex)
         index = newIndex
+    }
+
+    func skipWhitespace(until character: Character, index currentIndex: inout String.Index) throws {
+        var newIndex = currentIndex
+        try advance(until: character, index: &newIndex)
+        let indexBeforeFound = self.index(before: newIndex)
+        guard newIndex < indexBeforeFound else {
+            currentIndex = newIndex
+            return
+        }
+        guard self.containsWhitespace(in: currentIndex..<indexBeforeFound) else {
+            throw Error.containsNoneWhitespace
+        }
+        currentIndex = newIndex
     }
 
     func containsWhitespace(in range: Range<String.Index>) -> Bool {

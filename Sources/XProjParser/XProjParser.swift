@@ -57,7 +57,11 @@ public struct XProjParser {
                 let element: Any
                 if let key = result.key {
                     element = XProjObject(key: key, elements: subElements)
-                    try currentContent.advance(until: ";", index: &currentIndex)
+                    do {
+                        try currentContent.skipWhitespace(until: ";", index: &currentIndex)
+                    } catch {
+                        print(error)
+                    }
                 } else {
                     element = XProjRoot(elements: subElements)
                 }
@@ -102,7 +106,7 @@ public struct XProjParser {
         return results
     }
 
-    func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
+    private func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
         let regex = try RegexCompiler.shared.arrayRegex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
