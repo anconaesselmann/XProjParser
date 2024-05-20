@@ -18,7 +18,7 @@ public struct XProjParser {
         while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
             if currentIndex != result.range.lowerBound {
                 let skipped = currentContent[currentIndex..<result.range.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
-                if !skipped.isEmpty, !Set([";", ","]).contains(skipped) {
+                if !skipped.isEmpty, !Set([";"]).contains(skipped) {
                     // TODO: Colans should probably be part of objects to determine where the actual end of a property is.
                     // TODO: Commas should probably be part of array values to figure out where the actual end of an element is
                     throw Error.unableToParse
@@ -68,7 +68,7 @@ public struct XProjParser {
                     throw Error.unableToParse
                 }
                 let arrayBodyRange = try arrayRange.clipedBounds(for: currentContent)
-                let elements = try parse(content: content[arrayBodyRange], range: arrayBodyRange)
+                let elements = try parse(arrayContent: content[arrayBodyRange], range: arrayBodyRange)
                 let element = XProjArray(key: key, elements: elements)
                 results.append(element)
                 currentIndex = arrayRange.upperBound
@@ -105,9 +105,37 @@ public struct XProjParser {
         }
         if currentIndex < endIndex {
             let skipped = currentContent[currentIndex..<endIndex].trimmingCharacters(in: .whitespacesAndNewlines)
-            if !skipped.isEmpty, !Set([";", ","]).contains(skipped) {
-                // TODO: Array elements that are strings can currently not get parsed
-//                throw Error.unableToParse
+            if !skipped.isEmpty, !Set([";"]).contains(skipped) {
+                throw Error.unableToParse
+            }
+        }
+        return results
+    }
+
+    static func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
+        let regex = try RegexCompiler.shared.arrayRegex()
+        var currentIndex = range.lowerBound
+        let endIndex = range.upperBound
+        let currentContent = content[currentIndex..<endIndex]
+        var results: [Any] = []
+        while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
+            if let id = result.id {
+                let comment = result.comment
+                let id = XProjId(stringValue: id, comment: comment)
+                results.append(id)
+            } else if let quoted = result.quoted {
+                results.append(String(quoted))
+            } else if let notQuoted = result.notQuoted {
+                results.append(String(notQuoted))
+            } else {
+                throw Error.unableToParse
+            }
+            currentIndex = result.range.upperBound
+        }
+        if currentIndex < endIndex {
+            let skipped = currentContent[currentIndex..<endIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !skipped.isEmpty {
+                throw Error.unableToParse
             }
         }
         return results

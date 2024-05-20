@@ -19,7 +19,7 @@ public struct XProjId: Identifiable, Hashable {
     }
 
     public init?(_ body: String) {
-        let idRegex = #/(?<id>[0-9A-F]{24})\s+(\/\*\s*(?<comment>[^\*]+)\s*\*\/)?/#
+        let idRegex = #/(?<id>[0-9A-F]{24})\s*(\/\*\s*(?<comment>[^\*]+)\s*\*\/)?/#
         guard let result = try? idRegex.firstMatch(in: body) else {
             return nil
         }
