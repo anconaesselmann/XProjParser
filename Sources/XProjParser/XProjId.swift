@@ -3,7 +3,7 @@
 
 import Foundation
 
-public struct XProjId: Identifiable, Hashable {
+public struct XProjId: Hashable {
     public var stringValue: String
     public var comment: String?
 
@@ -34,5 +34,9 @@ public struct XProjId: Identifiable, Hashable {
         uuidString.removeAll { $0 == "-" }
         let range = uuidString.startIndex..<uuidString.index(uuidString.startIndex, offsetBy: 24)
         stringValue = String(uuidString[range])
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(stringValue)
     }
 }
