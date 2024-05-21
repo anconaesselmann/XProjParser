@@ -13,12 +13,12 @@ public struct XProjParser {
 
     public init() {}
 
-    public func parse(content: Substring, range: Range<String.Index>) throws -> [Any] {
+    public func parse(content: Substring, range: Range<String.Index>) throws -> [Ranged] {
         let regex = try RegexCompiler.shared.regex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
         let currentContent = content[currentIndex..<endIndex]
-        var results: [Any] = []
+        var results: [Ranged] = []
         while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
             if 
                 currentIndex != result.range.lowerBound,
@@ -42,14 +42,14 @@ public struct XProjParser {
                 )
                 let isArray = frameType.isParentheses
                 let bodyRange = try frame.range.clipedBounds(for: currentContent)
-                let subElements: [Any]
+                let subElements: [Ranged]
                 if isArray {
                     subElements = try parse(arrayContent: content[bodyRange], range: bodyRange)
                 } else {
                     subElements = try parse(content: content[bodyRange], range: bodyRange)
                 }
                 currentIndex = frame.range.upperBound
-                let element: Any
+                let element: Ranged
                 if let key = result.key {
                     element = XProjObject(
                         key: key,
@@ -93,24 +93,26 @@ public struct XProjParser {
         return results
     }
 
-    private func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Any] {
+    private func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Ranged] {
         let regex = try RegexCompiler.shared.arrayRegex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
         let currentContent = content[currentIndex..<endIndex]
-        var results: [Any] = []
+        var results: [Ranged] = []
         while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
+            let element: XProjArrayElement
             if let id = result.id {
                 let comment = result.comment
                 let id = XProjId(stringValue: id, comment: comment)
-                results.append(id)
+                element = XProjArrayElement(value: id, range: result.range)
             } else if let quoted = result.quoted {
-                results.append(String(quoted))
+                element = XProjArrayElement(value: quoted, range: result.range)
             } else if let notQuoted = result.notQuoted {
-                results.append(String(notQuoted))
+                element = XProjArrayElement(value: notQuoted, range: result.range)
             } else {
                 throw Error.unableToParse
             }
+            results.append(element)
             currentIndex = result.range.upperBound
         }
         if 

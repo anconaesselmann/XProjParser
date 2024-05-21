@@ -3,6 +3,6 @@
 
 import Foundation
 
-protocol Ranged {
+public protocol Ranged {
     var range: Range<String.Index> { get }
 }
