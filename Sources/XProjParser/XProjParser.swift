@@ -54,7 +54,8 @@ public struct XProjParser {
                     element = XProjObject(
                         key: key,
                         elements: subElements, 
-                        isArray: isArray,
+                        isArray: isArray, 
+                        comment: result.propertyComment,
                         range: result.range.lowerBound..<currentIndex
                     )
                     try currentContent.skipWhitespace(until: ";", index: &currentIndex)
