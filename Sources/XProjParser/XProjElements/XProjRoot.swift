@@ -3,6 +3,7 @@
 
 import Foundation
 
-public struct XProjRoot {
+public struct XProjRoot: Ranged {
     public let elements: [Any]
+    public var range: Range<String.Index>
 }

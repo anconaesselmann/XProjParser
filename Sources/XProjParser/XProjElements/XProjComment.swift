@@ -3,10 +3,16 @@
 
 import Foundation
 
-public struct XProjComment {
-    public let stringValue: Substring
+public struct XProjComment: Ranged {
 
-    public init(_ comment: Substring) {
+    public let stringValue: Substring
+    public let range: Range<String.Index>
+
+    public init?(_ comment: Substring?, range: Range<String.Index>) {
+        guard let comment = comment else {
+            return nil
+        }
         self.stringValue = comment
+        self.range = range
     }
 }

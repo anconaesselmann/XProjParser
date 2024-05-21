@@ -41,7 +41,8 @@ public enum XProjIsa: Identifiable, Equatable {
         }
     }
 
-    public init(rawValue: String) {
+    public init(_ string: Substring) {
+        let rawValue = String(string)
         switch rawValue {
         case "PBXBuildFile":
             self = .PBXBuildFile

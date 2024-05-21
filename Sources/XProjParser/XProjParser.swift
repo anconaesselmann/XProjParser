@@ -26,13 +26,7 @@ public struct XProjParser {
             {
                 throw Error.unableToParse
             }
-            if let idString = result.id {
-                let comment = result.idComment
-                let id = XProjId(stringValue: idString, comment: comment)
-                results.append(id)
-                currentIndex = result.range.upperBound
-            } else if let commentString = result.comment {
-                let comment = XProjComment(commentString)
+            if let comment = XProjComment(result.comment, range: result.range) {
                 results.append(comment)
                 currentIndex = result.range.upperBound
             } else if
@@ -46,9 +40,10 @@ public struct XProjParser {
                     from: frameStartIndex,
                     types: [frameType]
                 )
+                let isArray = frameType.isParentheses
                 let bodyRange = try frame.range.clipedBounds(for: currentContent)
                 let subElements: [Any]
-                if frameType.isParentheses {
+                if isArray {
                     subElements = try parse(arrayContent: content[bodyRange], range: bodyRange)
                 } else {
                     subElements = try parse(content: content[bodyRange], range: bodyRange)
@@ -56,42 +51,34 @@ public struct XProjParser {
                 currentIndex = frame.range.upperBound
                 let element: Any
                 if let key = result.key {
-                    element = XProjObject(key: key, elements: subElements)
-                    do {
-                        try currentContent.skipWhitespace(until: ";", index: &currentIndex)
-                    } catch {
-                        print(error)
-                    }
+                    element = XProjObject(
+                        key: key,
+                        elements: subElements, 
+                        isArray: isArray,
+                        range: result.range.lowerBound..<currentIndex
+                    )
+                    try currentContent.skipWhitespace(until: ";", index: &currentIndex)
                 } else {
-                    element = XProjRoot(elements: subElements)
+                    element = XProjRoot(
+                        elements: subElements,
+                        range: result.range.lowerBound..<currentIndex
+                    )
                 }
                 results.append(element)
-            } else if let key = result.propertyKey, var stringValue = result.value, let whiteSpace = result.whiteSpace {
-                let stringValue = String(stringValue)
-                let value: Any
-                if key == "isa" {
-                    value = XProjIsa(rawValue: stringValue)
-                } else if let id = XProjId(stringValue) {
-                    value = id
-                } else if let boolValue = Bool(verbose: stringValue) {
-                    value = boolValue
-                } else if let intValue = Int(stringValue) {
-                    value = intValue
-                } else {
-                    value = stringValue
-                }
-                let property = XProjProperty(indentation: String(whiteSpace), key: String(key), value: value)
+            } else if let property = XProjProperty(
+                key: result.propertyKey,
+                stringValue:  result.value,
+                whiteSpace: result.whiteSpace,
+                range: result.range
+            ) {
                 results.append(property)
                 currentIndex = result.range.upperBound
-            } else if let name = result.beginningSectionName {
-                let isa = XProjIsa(rawValue: String(name))
-                let header = XProjSectionComment(isStart: true, isa: isa)
-                results.append(header)
-                currentIndex = result.range.upperBound
-            } else if let name = result.endingSectionName {
-                let isa = XProjIsa(rawValue: String(name))
-                let footer = XProjSectionComment(isStart: false, isa: isa)
-                results.append(footer)
+            } else if let sectionComment = XProjSectionComment(
+                beginning: result.beginningSectionName,
+                ending: result.endingSectionName,
+                range: result.range
+            ) {
+                results.append(sectionComment)
                 currentIndex = result.range.upperBound
             } else {
                 throw Error.unableToParse

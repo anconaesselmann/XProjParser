@@ -3,7 +3,9 @@
 
 import Foundation
 
-public struct XProjObject {
+public struct XProjObject: Ranged {
     public let key: Substring
     public let elements: [Any]
+    public let isArray: Bool
+    public var range: Range<String.Index>
 }
