@@ -13,7 +13,14 @@ public struct XProjParser {
 
     public init() {}
 
-    public func parse(content: Substring, range: Range<String.Index>) throws -> [Ranged] {
+    public func parse(content: String, range: Range<String.Index>? = nil) throws -> [Ranged] {
+        let range = range ?? content.startIndex..<content.endIndex
+        var content = content[range]
+        return try parse(content: content, range: range)
+    }
+
+    public func parse(content: Substring, range: Range<String.Index>? = nil) throws -> [Ranged] {
+        let range = range ?? content.startIndex..<content.endIndex
         let regex = try RegexCompiler.shared.regex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
@@ -50,15 +57,19 @@ public struct XProjParser {
                 }
                 currentIndex = frame.range.upperBound
                 let element: Ranged
-                if let key = result.key {
-                    element = XProjObject(
+                if let key = result.key, let whiteSpace = result.objectWhiteSpace {
+                    try currentContent.skipWhitespace(until: ";", index: &currentIndex)
+                    let object = XProjObject(
                         key: key,
-                        elements: subElements, 
-                        isArray: isArray, 
+                        elements: subElements,
+                        isArray: isArray,
                         comment: result.propertyComment,
                         range: result.range.lowerBound..<currentIndex
                     )
-                    try currentContent.skipWhitespace(until: ";", index: &currentIndex)
+                    element = XProjProperty(
+                        indentation: whiteSpace,
+                        key: key,
+                        value: object, range: result.range.lowerBound..<currentIndex)
                 } else {
                     element = XProjRoot(
                         elements: subElements,
@@ -94,12 +105,12 @@ public struct XProjParser {
         return results
     }
 
-    private func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [Ranged] {
+    private func parse(arrayContent content: Substring, range: Range<String.Index>) throws -> [XProjArrayElement] {
         let regex = try RegexCompiler.shared.arrayRegex()
         var currentIndex = range.lowerBound
         let endIndex = range.upperBound
         let currentContent = content[currentIndex..<endIndex]
-        var results: [Ranged] = []
+        var results: [XProjArrayElement] = []
         while let result = try regex.firstMatch(in: currentContent[currentIndex..<endIndex]) {
             let element: XProjArrayElement
             if let id = result.id {

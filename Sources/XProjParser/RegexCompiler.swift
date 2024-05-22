@@ -22,7 +22,7 @@ final internal class RegexCompiler {
         let singleLineCommentRegexString = "\\s*\\/\\/\\s*(?<comment>.+)"
 
         let nestStartRegexString =
-            "(?<objectWhiteSpace>[ \\t]*)" +
+            "(?<objectWhiteSpace>[\\s]*)" +
             "(?<key>[^=\\s\\/]+)\\s*" +
             "(\\/\\*\\s*(?<propertyComment>[^\\*]+)\\s*\\*\\/\\s*)?=\\s+" +
             "(?<frameStart>\\{|\\()"
@@ -36,8 +36,8 @@ final internal class RegexCompiler {
             "(?<value>[^;\\{]+)" +
             ";"
 
-        let sectionStartString = "\\/\\*\\s+Begin\\s+(?<beginningSectionName>[^\\s]+)\\s+section\\s+\\*\\/"
-        let sectionEndString = "\\/\\*\\s+End\\s+(?<endingSectionName>[^\\s]+)\\s+section\\s+\\*\\/"
+        let sectionStartString = "\\s*\\/\\*\\s+Begin\\s+(?<beginningSectionName>[^\\s]+)\\s+section\\s+\\*\\/"
+        let sectionEndString = "\\s*\\/\\*\\s+End\\s+(?<endingSectionName>[^\\s]+)\\s+section\\s+\\*\\/"
 
         let regexString = "((\(nestStartRegexString))|(\(propertyString))|(\(rootObjectStart))|\(singleLineCommentRegexString))|(\(sectionStartString))|(\(sectionEndString))"
         let regex: R = try Regex(regexString)
