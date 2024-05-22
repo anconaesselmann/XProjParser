@@ -26,7 +26,7 @@ extension Range where Bound == String.Index {
 }
 
 public extension Array where Element == Range<String.Index> {
-    var merged: [Range<String.Index>] {
+    func merged() -> [Range<String.Index>] {
         Set(self).sorted { $0.lowerBound > $1.lowerBound }
             .reduce(into: [Range<String.Index>]()) {
             guard var last = $0.last else {

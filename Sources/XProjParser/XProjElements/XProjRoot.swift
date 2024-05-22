@@ -108,7 +108,7 @@ enum XProjRootError: Error {
 public extension String {
     mutating func removeSubranges(_ ranges: [Range<String.Index>]) {
         for range in ranges {
-            print(self[range])
+//            print(self[range])
             removeSubrange(range)
         }
     }
@@ -116,7 +116,7 @@ public extension String {
     func removedSubranges(_ ranges: [Range<String.Index>]) -> Self {
         var copy = self
         for range in ranges {
-            print(copy[range])
+//            print(copy[range])
             copy.removeSubrange(range)
         }
         return copy

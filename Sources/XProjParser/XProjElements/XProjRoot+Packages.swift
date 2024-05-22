@@ -14,7 +14,7 @@ public extension XProjRoot {
                     in: $1.targetName
                 ).ranges
             }
-            .merged
+            .merged()
             .map {
                 containers.reduce(into: $0) {
                     $0 = $0.enlarged(to: $1.outer, if: $1.inner)
