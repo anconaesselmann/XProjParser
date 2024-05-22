@@ -112,6 +112,15 @@ public extension String {
             removeSubrange(range)
         }
     }
+
+    func removedSubranges(_ ranges: [Range<String.Index>]) -> Self {
+        var copy = self
+        for range in ranges {
+            print(copy[range])
+            copy.removeSubrange(range)
+        }
+        return copy
+    }
 }
 
 public extension Array where Element == any Ranged {

@@ -6,11 +6,24 @@ import Foundation
 public extension XProjRoot {
 
     func removeRemotePackages(in content: String, _ elements: (packageName: String, targetName: String)...) throws -> String {
-        var remove = try elements.reduce(into: [any Ranged]()) {
-            $0 += try remotePackageEntries($1.packageName, in: $1.targetName)
-        }
-        var ranges = remove.ranges.merged
+        let containers = try remotePackageContainers(in: elements.map { $0.targetName })
+        var ranges = try elements
+            .reduce(into: [Range<String.Index>]()) {
+                $0 += try remotePackageEntries(
+                    for: $1.packageName,
+                    in: $1.targetName
+                ).ranges
+            }
+            .merged
+            .map {
+                containers.reduce(into: $0) {
+                    $0 = $0.enlarged(to: $1.outer, if: $1.inner)
+                }
+            }
+        return content.removedSubranges(ranges)
+    }
 
+    private func remotePackageContainers(in targetNames: [String]) throws -> [(outer: Range<String.Index>, inner: Range<String.Index>)] {
         guard let project = firstElement(withIsa: .PBXProject) else {
             throw XProjRootError.missingProperty
         }
@@ -20,29 +33,23 @@ public extension XProjRoot {
             try self.sectionRanges(for: .XCSwiftPackageProductDependency),
             try project.objectPropertyRanges(for: "packageReferences")
         ]
-        containers += try elements.map {
+        containers += try targetNames.map {
             guard let target = firstElement(
                 withIsa: .PBXNativeTarget,
                 key: "name",
-                value: $0.targetName
+                value: $0
             ) else {
-                throw XProjRootError.missingTargetWithName($0.targetName)
+                throw XProjRootError.missingTargetWithName($0)
             }
             return target
-        }.map {
+        }
+        .map {
             try $0.objectPropertyRanges(for: "packageProductDependencies")
         }
-
-        for container in containers {
-            ranges = ranges.enlarged(to: container.outer, ifIncluded: container.inner)
-        }
-
-        var content = content
-        content.removeSubranges(ranges)
-        return content
+        return containers
     }
 
-    private func remotePackageEntries(_ name: String, in targetName: String) throws -> [any Ranged] {
+    private func remotePackageEntries(for name: String, in targetName: String) throws -> [any Ranged] {
         guard let target = firstElement(
             withIsa: .PBXNativeTarget,
             key: "name",
