@@ -490,10 +490,16 @@ public extension XProjRoot {
     }
 
     func removeRemotePackages(in content: String, _ elements: (packageName: String, relativePath: String?, targetName: String)...) throws -> String {
-        var containers = try remotePackageContainers(in: elements.map { $0.targetName })
+        var containers = try packageContainers(in: elements.map { $0.targetName })
         var ranges = try elements
             .reduce(into: [Range<String.Index>]()) {
                 $0 += try remotePackageEntries(
+                    for: $1.packageName,
+                    relativePath: $1.relativePath,
+                    in: $1.targetName
+                )
+                .ranges()
+                $0 += try localPackageEntries(
                     for: $1.packageName,
                     relativePath: $1.relativePath,
                     in: $1.targetName
@@ -509,7 +515,7 @@ public extension XProjRoot {
         return content.removedSubranges(ranges)
     }
 
-    private func remotePackageContainers(in targetNames: [String]) 
+    private func packageContainers(in targetNames: [String])
         throws -> [(outer: Range<String.Index>, inner: Range<String.Index>)]
     {
         guard let project = firstElement(withIsa: .PBXProject) else {
@@ -517,6 +523,7 @@ public extension XProjRoot {
         }
 
         var containers: [(outer: Range<String.Index>, inner: Range<String.Index>)] = [
+            try self.sectionRanges(for: .XCLocalSwiftPackageReference),
             try self.sectionRanges(for: .XCRemoteSwiftPackageReference),
             try self.sectionRanges(for: .XCSwiftPackageProductDependency),
             try project.objectPropertyRanges(for: "packageReferences")
@@ -535,6 +542,40 @@ public extension XProjRoot {
             try $0.objectPropertyRanges(for: "packageProductDependencies")
         }
         return containers
+    }
+
+    private func localPackageEntries(for name: String, relativePath: String?, in targetName: String) throws -> [any Ranged] {
+        var ranged: [(any Ranged)?] = []
+        let localPackageReferenceIds = try elements(withIsa: .XCLocalSwiftPackageReference)
+            .map {
+                (
+                    id: XProjId(stringValue: $0.key),
+                    relativePath: try $0.string(for: "relativePath")
+                )
+            }
+            .filter {
+                if let relativePath = relativePath {
+                    return $0.relativePath == relativePath
+                } else if let last = $0.relativePath.split(separator: "/").last {
+                    return last == name
+                } else {
+                    return false
+                }
+            }.map { $0.id }
+        guard !localPackageReferenceIds.isEmpty else {
+            return []
+        }
+        ranged += try localPackageReferenceIds.map { try self.element(withId: $0)}
+        guard let project = firstElement(withIsa: .PBXProject) else {
+            throw XProjRootError.missingProperty
+        }
+        let localPackageReferenceArrayElements = try localPackageReferenceIds.map {
+            try project
+                .array(for: "packageReferences")
+                .element(where: $0)
+        }
+        ranged += localPackageReferenceArrayElements
+        return ranged.compactMap { $0 }
     }
 
     private func remotePackageEntries(for name: String, relativePath: String?, in targetName: String) throws -> [any Ranged] {
