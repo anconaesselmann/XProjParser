@@ -4,7 +4,7 @@
 import Foundation
 
 final internal class RegexCompiler {
-    typealias R = Regex<(Substring, Optional<Substring>, Optional<Substring>, objectWhiteSpace: Optional<Substring>, key: Optional<Substring>, Optional<Substring>, propertyComment: Optional<Substring>, frameStart: Optional<Substring>, Optional<Substring>, whiteSpace: Optional<Substring>, propertyKey: Optional<Substring>, value: Optional<Substring>, Optional<Substring>, rootObjectStart: Optional<Substring>, comment: Optional<Substring>, Optional<Substring>, beginningSectionName: Optional<Substring>, Optional<Substring>, endingSectionName: Optional<Substring>)>
+    typealias R = Regex<(Substring, Optional<Substring>, Optional<Substring>, objectWhiteSpace: Optional<Substring>, key: Optional<Substring>, Optional<Substring>, propertyComment: Optional<Substring>, frameStart: Optional<Substring>, Optional<Substring>, whiteSpace: Optional<Substring>, propertyKey: Optional<Substring>, value: Optional<Substring>, Optional<Substring>, Optional<Substring>, Optional<Substring>, Optional<Substring>, rootObjectStart: Optional<Substring>, comment: Optional<Substring>, Optional<Substring>, beginningSectionName: Optional<Substring>, Optional<Substring>, endingSectionName: Optional<Substring>)>
 
     typealias ArrayR = Regex<(Substring, Optional<Substring>, quoted: Optional<Substring>, Optional<Substring>, Optional<Substring>, notQuoted: Optional<Substring>, Optional<Substring>, id: Optional<Substring>, Optional<Substring>, comment: Optional<Substring>)>
 
@@ -30,11 +30,10 @@ final internal class RegexCompiler {
         let rootObjectStart = "[ \t]*(?<rootObjectStart>\\{)"
 
         let propertyString =
-            "(?<whiteSpace>[\\t ]*)" +
-            "(?<propertyKey>[^ \\{\\}; \t\n]+)" +
+            "(?<whiteSpace>\\s*)" +
+            "(?<propertyKey>[^\\{\\};\\s]+)" +
             "\\s=\\s" +
-            "(?<value>[^;\\{]+)" +
-            ";"
+            "(?<value>(\"(\\\\\"|[^\"])+\")|([^;\\{]+));"
 
         let sectionStartString = "\\s*\\/\\*\\s+Begin\\s+(?<beginningSectionName>[^\\s]+)\\s+section\\s+\\*\\/"
         let sectionEndString = "\\s*\\/\\*\\s+End\\s+(?<endingSectionName>[^\\s]+)\\s+section\\s+\\*\\/"

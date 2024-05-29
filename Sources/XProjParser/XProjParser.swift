@@ -56,6 +56,12 @@ public struct XProjParser {
                     subElements = try parse(content: content[bodyRange], range: bodyRange)
                 }
                 currentIndex = frame.range.upperBound
+                let elementsRange: Range<String.Index>
+                if let start = subElements.first?.range.lowerBound, let end = subElements.last?.range.upperBound {
+                    elementsRange = start..<end
+                } else {
+                    elementsRange = bodyRange
+                }
                 let element: Ranged
                 if let key = result.key, let whiteSpace = result.objectWhiteSpace {
                     try currentContent.skipWhitespace(until: ";", index: &currentIndex)
@@ -64,7 +70,8 @@ public struct XProjParser {
                         elements: subElements,
                         isArray: isArray,
                         comment: result.propertyComment,
-                        range: result.range.lowerBound..<currentIndex
+                        range: result.range.lowerBound..<currentIndex, 
+                        elementsRange: elementsRange
                     )
                     element = XProjProperty(
                         indentation: whiteSpace,

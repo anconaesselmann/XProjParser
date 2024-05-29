@@ -9,6 +9,7 @@ public struct XProjObject: Ranged {
     public let isArray: Bool
     public let comment: Substring?
     public var range: Range<String.Index>
+    public var elementsRange: Range<String.Index>
 }
 
 public extension XProjObject {
@@ -62,8 +63,11 @@ public extension XProjObject {
         return id
     }
 
-    func array(for key: String) -> [XProjArrayElement] {
-        (properties.first { $0.key == key }?.value as? XProjObject)?.elements as? [XProjArrayElement] ?? []
+    func array(for key: String) throws -> [XProjArrayElement] {
+        guard let elements = (properties.first { $0.key == key }?.value as? XProjObject)?.elements as? [XProjArrayElement] else {
+            throw Error.missingProperty(key)
+        }
+        return elements
     }
 
     func objectPropertyRanges(for key: String) throws -> (outer: Range<String.Index>, inner: Range<String.Index>) {
@@ -118,6 +122,17 @@ public extension Array where Element == XProjArrayElement {
             throw Error.notAnId
         }
         return id
+    }
+
+    func filter(where predicate: (XProjId) throws -> Bool) throws -> [XProjId] {
+        let elements = try filter( {
+            guard let id = $0.id else {
+                throw Error.notAnId
+            }
+            return try predicate(id)
+        })
+        let ids = elements.compactMap { $0.id }
+        return ids
     }
 }
 

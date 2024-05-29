@@ -5,7 +5,7 @@ import Foundation
 
 public enum XProjIsa: Identifiable, Equatable {
 
-    case PBXBuildFile, PBXFileReference, PBXFrameworksBuildPhase, PBXGroup, PBXNativeTarget, PBXProject, PBXResourcesBuildPhase, XCBuildConfiguration, XCConfigurationList, XCRemoteSwiftPackageReference, XCSwiftPackageProductDependency
+    case PBXBuildFile, PBXFileReference, PBXFrameworksBuildPhase, PBXGroup, PBXNativeTarget, PBXProject, PBXResourcesBuildPhase, XCBuildConfiguration, XCConfigurationList, XCRemoteSwiftPackageReference, XCLocalSwiftPackageReference, XCSwiftPackageProductDependency
     case other(String)
 
     public var id: String {
@@ -34,6 +34,8 @@ public enum XProjIsa: Identifiable, Equatable {
             return "XCConfigurationList"
         case .XCRemoteSwiftPackageReference:
             return "XCRemoteSwiftPackageReference"
+        case .XCLocalSwiftPackageReference:
+            return "XCLocalSwiftPackageReference"
         case .XCSwiftPackageProductDependency:
             return "XCSwiftPackageProductDependency"
         case .other(let rawValue):
@@ -64,6 +66,8 @@ public enum XProjIsa: Identifiable, Equatable {
             self = .XCConfigurationList
         case "XCRemoteSwiftPackageReference":
             self = .XCRemoteSwiftPackageReference
+        case "XCLocalSwiftPackageReference":
+            self = .XCLocalSwiftPackageReference
         case "XCSwiftPackageProductDependency":
             self = .XCSwiftPackageProductDependency
         default:

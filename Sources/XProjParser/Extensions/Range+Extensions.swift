@@ -13,7 +13,7 @@ extension Range where Bound == String.Index {
         guard lowerBound > content.startIndex else {
             throw Error.invalidRange
         }
-        guard upperBound < content.endIndex else {
+        guard upperBound <= content.endIndex else {
             throw Error.invalidRange
         }
         let start = content.index(after: lowerBound)

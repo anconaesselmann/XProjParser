@@ -3,7 +3,7 @@
 
 import Foundation
 
-public struct XProjId: Hashable {
+public struct XProjId: Hashable, Equatable {
     public var stringValue: String
     public var comment: String?
 
@@ -42,5 +42,15 @@ public struct XProjId: Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(stringValue)
+    }
+
+    public func commented(_ comment: String?) -> Self {
+        var copy = self
+        copy.comment = comment
+        return copy
+    }
+
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.stringValue == rhs.stringValue
     }
 }

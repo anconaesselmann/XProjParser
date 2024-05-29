@@ -24,6 +24,15 @@ public extension XProjRoot {
             .compactMap { $0.value as? XProjObject } ?? []
     }
 
+    var sectionComments: [XProjSectionComment] {
+        (elements.lazy
+            .compactMap { $0 as? XProjProperty }
+            .first { $0.key == "objects"}?.value as? XProjObject)?
+            .elements
+            .lazy
+            .compactMap { $0 as? XProjSectionComment } ?? []
+    }
+
     func element(withId id: XProjId) throws -> XProjObject {
         guard let element = objects
             .first(where: { $0.key == id.stringValue} )
@@ -108,7 +117,6 @@ enum XProjRootError: Error {
 public extension String {
     mutating func removeSubranges(_ ranges: [Range<String.Index>]) {
         for range in ranges {
-//            print(self[range])
             removeSubrange(range)
         }
     }
@@ -116,7 +124,6 @@ public extension String {
     func removedSubranges(_ ranges: [Range<String.Index>]) -> Self {
         var copy = self
         for range in ranges {
-//            print(copy[range])
             copy.removeSubrange(range)
         }
         return copy
@@ -124,7 +131,7 @@ public extension String {
 }
 
 public extension Array where Element == any Ranged {
-    var ranges: [Range<String.Index>] {
+    func ranges() -> [Range<String.Index>] {
         map { $0.range }
     }
 }
