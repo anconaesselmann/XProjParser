@@ -5,20 +5,24 @@ import Foundation
 
 public extension XProjRoot {
 
-    func addRemotePackages(
+    func addPackages(
         in content: String,
-        _ elements: (packageName: String, url: String, version: String, targetName: String)...
+        _ elements: (dependency: XProjDependency, isLocal: Bool, targetName: String)...
     ) throws -> String {
         var content = content
+        var localSwiftPackageReferenceObjects: [XProjWriteElement] = []
         var remoteSwiftPackageReferenceObjects: [XProjWriteElement] = []
         var packageProductDependencyObjects: [XProjWriteElement] = []
         var buildFileObjects: [XProjWriteElement] = []
         var frameworkFilesObjects: [XProjWriteElement] = []
         var targetPackageProductDependencyIdsObjects: [XProjWriteElement] = []
+        var localSwiftPackageReferenceIdsObjects: [XProjWriteElement] = []
         var remoteSwiftPackageReferenceIdsObjects: [XProjWriteElement] = []
 
+        var localSwiftPackageReferenceIds: [String: XProjId] = [:]
         var remoteSwiftPackageReferenceIds: [String: XProjId] = [:]
 
+        var createLocalSwiftPackageReferenceSectionHeaders = false
         var createRemoteSwiftPackageReferenceSectionHeaders = false
         var createPackageProductDependencySectionHeaders = false
 
@@ -54,64 +58,71 @@ public extension XProjRoot {
         var packageProductDependencyIds: [String: [String: XProjId]] = [:]
 
         for element in elements {
-            let remoteSwiftPackageReferenceId: XProjId
+            let name = element.dependency.name
+            let url = element.dependency.url
+            let localPath = element.dependency.localPath
+            let version = element.dependency.version
+            var remoteSwiftPackageReferenceId: XProjId?
 
-            if let id = remoteSwiftPackageReferenceIds[element.packageName] {
-                remoteSwiftPackageReferenceId = id
-            } else {
-                remoteSwiftPackageReferenceId = XProjId()
-                let remoteSwiftPackageReference = NewXProjProperty(
-                    key: remoteSwiftPackageReferenceId.stringValue,
-                    value: NewXProjObject(
-                        key: remoteSwiftPackageReferenceId.stringValue,
-                        elements: [
-                            NewXProjProperty(key: "isa", value: XProjIsa.XCRemoteSwiftPackageReference),
-                            NewXProjProperty(key: "repositoryURL", value: "\"\(element.url)\""),
-                            NewXProjProperty(
-                                key: "requirement",
-                                value: NewXProjObject(key: "requirement", elements: [
-                                    NewXProjProperty(key: "kind", value: "upToNextMajorVersion"),
-                                    NewXProjProperty(key: "minimumVersion", value: element.version)
-                                ])
-                            ),
-                        ],
-                        comment: "XCRemoteSwiftPackageReference \"\(element.packageName)\""
-                    )
-                )
-                let lastElementIndex = self.elements(withIsa: .XCRemoteSwiftPackageReference).last?.range.upperBound
-                createRemoteSwiftPackageReferenceSectionHeaders = lastElementIndex == nil
-                guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
+            if element.isLocal {
+                guard let localPath = localPath else {
                     throw Error.missingProperty
                 }
-                let writeElement = XProjWriteElement(
-                    index: index,
-                    indent: 2,
-                    object: remoteSwiftPackageReference
-                )
-                remoteSwiftPackageReferenceObjects.append(writeElement)
-                remoteSwiftPackageReferenceIds[element.packageName] = remoteSwiftPackageReferenceId
+                if localSwiftPackageReferenceIds[name] == nil {
+                    let lastElementIndex = self.elements(withIsa: .XCLocalSwiftPackageReference)
+                        .last?.range.upperBound
+                    createLocalSwiftPackageReferenceSectionHeaders = lastElementIndex == nil
+                    guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
+                        throw Error.missingProperty
+                    }
+                    let id = XProjId()
+                    let writeElement = XProjWriteElement(
+                        index: index,
+                        indent: 2,
+                        object: try NewXProjProperty(
+                            localSwiftPackageReferenceId: id,
+                            localPath: localPath
+                        )
+                    )
+                    localSwiftPackageReferenceObjects.append(writeElement)
+                    localSwiftPackageReferenceIds[name] = id
+                }
+            } else {
+                if let id = remoteSwiftPackageReferenceIds[name] {
+                    remoteSwiftPackageReferenceId = id
+                } else {
+                    let lastElementIndex = self.elements(withIsa: .XCRemoteSwiftPackageReference)
+                        .last?.range.upperBound
+                    createRemoteSwiftPackageReferenceSectionHeaders = lastElementIndex == nil
+                    guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
+                        throw Error.missingProperty
+                    }
+                    let id = XProjId()
+                    remoteSwiftPackageReferenceId = id
+                    let writeElement = XProjWriteElement(
+                        index: index,
+                        indent: 2,
+                        object: try NewXProjProperty(
+                            remoteSwiftPackageReferenceId: id,
+                            name: name,
+                            url: url,
+                            version: version
+                        )
+                    )
+                    remoteSwiftPackageReferenceObjects.append(writeElement)
+                    remoteSwiftPackageReferenceIds[name] = remoteSwiftPackageReferenceId
+                }
             }
 
             let packageProductDependencyId = XProjId()
             if packageProductDependencyIds[element.targetName] == nil {
                 packageProductDependencyIds[element.targetName] = [:]
             }
-            packageProductDependencyIds[element.targetName]?[element.packageName] = packageProductDependencyId
-            let packageProductDependency = NewXProjProperty(
-                key: packageProductDependencyId.stringValue,
-                value: NewXProjObject(
-                    key: packageProductDependencyId.stringValue,
-                    elements: [
-                        NewXProjProperty(key: "isa", value: XProjIsa.XCSwiftPackageProductDependency),
-                        NewXProjProperty(
-                            key: "package",
-                            value: remoteSwiftPackageReferenceId
-                                .commented("XCRemoteSwiftPackageReference \"\(element.packageName)\"")
-                        ),
-                        NewXProjProperty(key: "productName", value: element.packageName)
-                    ],
-                    comment: element.packageName
-                )
+            packageProductDependencyIds[element.targetName]?[name] = packageProductDependencyId
+            let packageProductDependency =  NewXProjProperty(
+                packageProductDependencyId: packageProductDependencyId,
+                remoteSwiftPackageReferenceId: remoteSwiftPackageReferenceId,
+                name: name
             )
             let lastElementIndex = self.elements(withIsa: .XCSwiftPackageProductDependency).last?.range.upperBound
             createPackageProductDependencySectionHeaders = lastElementIndex == nil
@@ -136,11 +147,11 @@ public extension XProjRoot {
                         NewXProjProperty(key: "isa", value: XProjIsa.PBXBuildFile),
                         NewXProjProperty(
                             key: "productRef",
-                            value: packageProductDependencyId.commented(element.packageName)
+                            value: packageProductDependencyId.commented(name)
                         ),
                     ],
                     isCompact: true,
-                    comment: "\(element.packageName) in Frameworks"
+                    comment: "\(name) in Frameworks"
                 )
             )
             index = self.elements(withIsa: .PBXBuildFile).last!.range.upperBound
@@ -166,7 +177,7 @@ public extension XProjRoot {
             writeElement = XProjWriteElement(
                 index: index,
                 indent: 4,
-                object: NewXProjArrayElement(value: buildFileId.commented("\(element.packageName) in Frameworks"))
+                object: NewXProjArrayElement(value: buildFileId.commented("\(name) in Frameworks"))
             )
             frameworkFilesObjects.append(writeElement)
         }
@@ -175,8 +186,8 @@ public extension XProjRoot {
             throw XProjRootError.missingProperty
         }
 
-        let elementsByTarget = elements.reduce(into: [String: [Dependency]]()) {
-            $0[$1.targetName] = ($0[$1.targetName] ?? []) + [Dependency(name: $1.packageName, url: $1.url, version: $1.version)]
+        let elementsByTarget = elements.reduce(into: [String: [XProjDependency]]()) {
+            $0[$1.targetName] = ($0[$1.targetName] ?? []) + [$1.dependency]
         }
 
         for (targetName, dependencies) in elementsByTarget {
@@ -221,7 +232,33 @@ public extension XProjRoot {
             // TODO: Insert alphabetically
             let index = project.elementsRange.upperBound
 
-            let ids = remoteSwiftPackageReferenceIds.sorted(by: { $0.key < $1.key }).map { $0.value.commented("XCRemoteSwiftPackageReference \"\($0.key)\"") }
+            let combinedIds = remoteSwiftPackageReferenceIds
+                    .map { (key: $0.key, value: $0.value, isLocal: false)} +
+                localSwiftPackageReferenceIds
+                    .map { (key: $0.key, value: $0.value, isLocal: true)}
+
+            let pathsByName = try elements
+                .filter { $0.isLocal }
+                .reduce(into: [String: String]()) {
+                    if let path = $1.dependency.localPath {
+                        $0[$1.dependency.name] = path
+                    } else {
+                        throw Error.missingProperty
+                    }
+                }
+
+            let ids = try combinedIds
+                .sorted { $0.key < $1.key }
+                .map {
+                    if $0.isLocal {
+                        guard let path = pathsByName[$0.key] else {
+                            throw Error.missingProperty
+                        }
+                        return $0.value.commented("XCLocalSwiftPackageReference \"\(path)\"")
+                    } else {
+                        return $0.value.commented("XCRemoteSwiftPackageReference \"\($0.key)\"")
+                    }
+                }
 
             let packageReferencesProperty = NewXProjProperty(key: "packageReferences", value: ids)
             let writeElement = XProjWriteElement(
@@ -236,7 +273,14 @@ public extension XProjRoot {
             buildFileObjects +
             frameworkFilesObjects +
             targetPackageProductDependencyIdsObjects +
+            localSwiftPackageReferenceIdsObjects +
             remoteSwiftPackageReferenceIdsObjects +
+            (
+                createLocalSwiftPackageReferenceSectionHeaders
+                    ? localSwiftPackageReferenceObjects
+                        .wrappedInSectionHeaders(.XCLocalSwiftPackageReference)
+                    : localSwiftPackageReferenceObjects
+            ) +
             (
                 createRemoteSwiftPackageReferenceSectionHeaders
                     ? remoteSwiftPackageReferenceObjects
