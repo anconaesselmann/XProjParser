@@ -204,8 +204,7 @@ public extension XProjRoot {
                 // TODO: Not implemented
                 assertionFailure()
             } else {
-                // TODO: insert alphabetically
-                let index = target.elementsRange.upperBound
+                let index = try target.indexForNewProperty(named: "packageProductDependencies")
                 // TODO: sort
                 let ids: [XProjId] = try dependencies.map {
                     guard let id = packageProductDependencyIds[targetName]?[$0.name] else {
@@ -230,7 +229,7 @@ public extension XProjRoot {
             assertionFailure("Implement")
         } else {
             // TODO: Insert alphabetically
-            let index = project.elementsRange.upperBound
+            let index = try project.indexForNewProperty(named: "packageReferences")
 
             let combinedIds = remoteSwiftPackageReferenceIds
                     .map { (key: $0.key, value: $0.value, isLocal: false)} +

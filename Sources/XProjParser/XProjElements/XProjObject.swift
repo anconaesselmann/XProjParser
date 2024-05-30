@@ -17,6 +17,8 @@ public extension XProjObject {
     enum Error: Swift.Error {
         case missingProperty(String)
         case propertyNotOfType(String, String)
+        case duplicatePropertyNames
+        case unknown
     }
 
     var properties: [XProjProperty] {
@@ -82,6 +84,37 @@ public extension XProjObject {
             outer: property.range,
             inner: first.range.lowerBound..<last.range.upperBound
         )
+    }
+
+    func indexForNewProperty(named propertyName: String) throws -> String.Index {
+        var properties = self.properties
+        guard
+            !properties.isEmpty
+        else {
+            return elementsRange.upperBound
+        }
+        let isa = properties.remove(at: 0)
+        guard isa.key == "isa" else {
+            return elementsRange.upperBound
+        }
+        var names = properties.map { String($0.key) }
+        guard names.sorted() == names else {
+            return elementsRange.upperBound
+        }
+        let withNewProperty = (names + [propertyName]).sorted()
+        guard Set(withNewProperty).count == names.count + 1 else {
+            throw Error.duplicatePropertyNames
+        }
+        guard let insertedAt = withNewProperty.firstIndex(of: propertyName) else {
+            throw Error.unknown
+        }
+        guard insertedAt < properties.count else {
+            return elementsRange.upperBound
+        }
+        guard insertedAt > 0 else {
+            return elementsRange.lowerBound
+        }
+        return properties[insertedAt - 1].range.upperBound
     }
 }
 
