@@ -144,7 +144,7 @@ public extension XProjRoot {
                 value: NewXProjObject(
                     key: buildFileId.stringValue,
                     elements: [
-                        NewXProjProperty(key: "isa", value: XProjIsa.PBXBuildFile),
+                        .isa(.PBXBuildFile),
                         NewXProjProperty(
                             key: "productRef",
                             value: packageProductDependencyId.commented(name)

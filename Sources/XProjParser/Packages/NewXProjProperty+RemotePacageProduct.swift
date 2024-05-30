@@ -10,7 +10,7 @@ public extension NewXProjProperty {
         name: String
     ) {
         let elements: [NewXProjProperty?] = [
-            NewXProjProperty(key: "isa", value: XProjIsa.XCSwiftPackageProductDependency),
+            .isa(.XCSwiftPackageProductDependency),
             remoteSwiftPackageReferenceId == nil
                 ? nil
                 : NewXProjProperty(

@@ -13,7 +13,7 @@ public extension NewXProjProperty {
             value: NewXProjObject(
                 key: remoteSwiftPackageReferenceId.stringValue,
                 elements: [
-                    NewXProjProperty(key: "isa", value: XProjIsa.XCRemoteSwiftPackageReference),
+                    .isa(.XCRemoteSwiftPackageReference),
                     NewXProjProperty(key: "repositoryURL", value: "\"\(url)\""),
                     NewXProjProperty(
                         key: "requirement",
@@ -37,7 +37,7 @@ public extension NewXProjProperty {
             value: NewXProjObject(
                 key: localSwiftPackageReferenceId.stringValue,
                 elements: [
-                    NewXProjProperty(key: "isa", value: XProjIsa.XCLocalSwiftPackageReference),
+                    .isa(.XCLocalSwiftPackageReference),
                     NewXProjProperty(key: "relativePath", value: localPath)
                 ],
                 comment: "XCLocalSwiftPackageReference \"\(localPath)\""

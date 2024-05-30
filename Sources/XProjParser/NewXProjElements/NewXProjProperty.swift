@@ -3,6 +3,12 @@
 
 import Foundation
 
+public extension NewXProjProperty {
+    static func isa(_ value: XProjIsa) -> Self {
+        NewXProjProperty(key: "isa", value: value)
+    }
+}
+
 public struct NewXProjProperty: XProjWriteable {
     enum Error: Swift.Error {
         case invalidValue

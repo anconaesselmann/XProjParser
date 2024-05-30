@@ -13,13 +13,13 @@ extension Array where Element == XProjWriteElement {
             return self
         }
         return [
-            XProjWriteElement.linebreak(index: index),
-            XProjWriteElement.sectionStart(
+            .linebreak(index: index),
+            .sectionStart(
                 index: index,
                 isa: isa
             )
         ] + self + [
-            XProjWriteElement.sectionEnd(
+            .sectionEnd(
                 index: index,
                 isa: isa
             )
