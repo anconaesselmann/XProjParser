@@ -7,7 +7,7 @@ public extension XProjRoot {
 
     func addPackages(
         in content: String,
-        _ elements: (dependency: XProjDependency, isLocal: Bool, targetName: String)...
+        _ elements: [(dependency: XProjDependency, isLocal: Bool, targetName: String)]
     ) throws -> String {
         var content = content
         var localSwiftPackageReferenceObjects: [XProjWriteElement] = []
@@ -300,7 +300,14 @@ public extension XProjRoot {
         return content
     }
 
-    func removeRemotePackages(in content: String, _ elements: (packageName: String, relativePath: String?, targetName: String)...) throws -> String {
+    func addPackages(
+        in content: String,
+        _ elements: (dependency: XProjDependency, isLocal: Bool, targetName: String)...
+    ) throws -> String {
+        try addPackages(in: content, elements)
+    }
+
+    func removePackages(in content: String, _ elements: [(packageName: String, relativePath: String?, targetName: String)]) throws -> String {
         var containers = try packageContainers(in: elements.map { $0.targetName })
         var ranges = try elements
             .reduce(into: [Range<String.Index>]()) {
@@ -324,6 +331,10 @@ public extension XProjRoot {
                 }
             }
         return content.removedSubranges(ranges)
+    }
+
+    func removePackages(in content: String, _ elements: (packageName: String, relativePath: String?, targetName: String)...) throws -> String {
+        try removePackages(in: content, elements)
     }
 
     private func packageContainers(in targetNames: [String])
