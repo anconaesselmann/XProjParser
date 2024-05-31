@@ -64,6 +64,8 @@ public extension XProjRoot {
             let version = element.dependency.version
             var remoteSwiftPackageReferenceId: XProjId?
 
+            let elementId = element.dependency.id
+
             if element.isLocal {
                 guard let localPath = localPath else {
                     throw Error.missingProperty
@@ -75,7 +77,7 @@ public extension XProjRoot {
                     guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
                         throw Error.missingProperty
                     }
-                    let id = XProjId()
+                    let id = XProjId(localIdFrom: elementId)
                     let writeElement = XProjWriteElement(
                         index: index,
                         indent: 2,
@@ -97,7 +99,7 @@ public extension XProjRoot {
                     guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
                         throw Error.missingProperty
                     }
-                    let id = XProjId()
+                    let id = XProjId(remoteIdFrom: elementId)
                     remoteSwiftPackageReferenceId = id
                     let writeElement = XProjWriteElement(
                         index: index,
@@ -114,7 +116,7 @@ public extension XProjRoot {
                 }
             }
 
-            let packageProductDependencyId = XProjId()
+            let packageProductDependencyId = XProjId(packageIdFrom: elementId)
             if packageProductDependencyIds[element.targetName] == nil {
                 packageProductDependencyIds[element.targetName] = [:]
             }
@@ -138,7 +140,7 @@ public extension XProjRoot {
 
             // 1 PBXBuildFile
 
-            let buildFileId = XProjId()
+            let buildFileId = XProjId(buildFileIdFrom: elementId)
             let buildFile = NewXProjProperty(
                 key: buildFileId.stringValue,
                 value: NewXProjObject(

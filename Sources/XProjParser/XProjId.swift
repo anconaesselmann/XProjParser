@@ -53,4 +53,31 @@ public struct XProjId: Hashable, Equatable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.stringValue == rhs.stringValue
     }
+
+    public init(buildFileIdFrom uuid: UUID) {
+        var uuidString = UUID().uuidString
+        uuidString.removeAll { $0 == "-" }
+        let targetSectionRange = uuidString.startIndex..<uuidString.index(uuidString.startIndex, offsetBy: 8)
+        let dependencySectionRange = uuidString.index(uuidString.startIndex, offsetBy: 8)..<uuidString.index(uuidString.startIndex, offsetBy: 24)
+        stringValue = String(uuidString[targetSectionRange]) + String(uuidString[dependencySectionRange])
+    }
+
+    public init(packageIdFrom uuid: UUID) {
+        var uuidString = UUID().uuidString
+        uuidString.removeAll { $0 == "-" }
+        let targetSectionRange = uuidString.startIndex..<uuidString.index(uuidString.startIndex, offsetBy: 8)
+        let dependencySectionRange = uuidString.index(uuidString.startIndex, offsetBy: 16)..<uuidString.index(uuidString.startIndex, offsetBy: 32)
+        stringValue = String(uuidString[targetSectionRange]) + String(uuidString[dependencySectionRange])
+    }
+
+    public init(remoteIdFrom uuid: UUID) {
+        var uuidString = UUID().uuidString
+        uuidString.removeAll { $0 == "-" }
+        let range = uuidString.index(uuidString.startIndex, offsetBy: 8)..<uuidString.index(uuidString.startIndex, offsetBy: 32)
+        stringValue = String(uuidString[range])
+    }
+
+    public init(localIdFrom uuid: UUID) {
+        stringValue = String(XProjId(remoteIdFrom: uuid).stringValue.reversed())
+    }
 }
