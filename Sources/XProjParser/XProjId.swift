@@ -55,7 +55,7 @@ public struct XProjId: Hashable, Equatable {
     }
 
     public init(buildFileIdFrom uuid: UUID) {
-        var uuidString = UUID().uuidString
+        var uuidString = uuid.uuidString
         uuidString.removeAll { $0 == "-" }
         let targetSectionRange = uuidString.startIndex..<uuidString.index(uuidString.startIndex, offsetBy: 8)
         let dependencySectionRange = uuidString.index(uuidString.startIndex, offsetBy: 8)..<uuidString.index(uuidString.startIndex, offsetBy: 24)
@@ -63,7 +63,7 @@ public struct XProjId: Hashable, Equatable {
     }
 
     public init(packageIdFrom uuid: UUID) {
-        var uuidString = UUID().uuidString
+        var uuidString = uuid.uuidString
         uuidString.removeAll { $0 == "-" }
         let targetSectionRange = uuidString.startIndex..<uuidString.index(uuidString.startIndex, offsetBy: 8)
         let dependencySectionRange = uuidString.index(uuidString.startIndex, offsetBy: 16)..<uuidString.index(uuidString.startIndex, offsetBy: 32)
@@ -71,7 +71,7 @@ public struct XProjId: Hashable, Equatable {
     }
 
     public init(remoteIdFrom uuid: UUID) {
-        var uuidString = UUID().uuidString
+        var uuidString = uuid.uuidString
         uuidString.removeAll { $0 == "-" }
         let range = uuidString.index(uuidString.startIndex, offsetBy: 8)..<uuidString.index(uuidString.startIndex, offsetBy: 32)
         stringValue = String(uuidString[range])
