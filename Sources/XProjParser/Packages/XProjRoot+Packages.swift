@@ -202,18 +202,22 @@ public extension XProjRoot {
             ) else {
                 throw XProjRootError.missingTargetWithName(targetName)
             }
+            let ids: [XProjId] = try dependencies.map {
+                guard let id = packageProductDependencyIds[targetName]?[$0.name] else {
+                    throw Error.missingProperty
+                }
+                return id.commented($0.name)
+            }
             if let packageProductDependenciesArray = try? target.array(for: "packageProductDependencies") {
-                // TODO: Not implemented
-                assertionFailure()
+                let index = try target.objectPropertyRanges(for: "packageProductDependencies").inner.upperBound
+                // TODO: sort
+                let writeElements = ids
+                    .map { NewXProjArrayElement(value: $0) }
+                    .map { XProjWriteElement(index: index, indent: 4, object: $0) }
+                targetPackageProductDependencyIdsObjects += writeElements
             } else {
                 let index = try target.indexForNewProperty(named: "packageProductDependencies")
                 // TODO: sort
-                let ids: [XProjId] = try dependencies.map {
-                    guard let id = packageProductDependencyIds[targetName]?[$0.name] else {
-                        throw Error.missingProperty
-                    }
-                    return id.commented($0.name)
-                }
                 let packageProductDependenciesProperty = NewXProjProperty(key: "packageProductDependencies", value: ids)
                 let writeElement = XProjWriteElement(
                     index: index,
@@ -226,42 +230,46 @@ public extension XProjRoot {
 
         // 4 PBXProject
 
+        let combinedIds = remoteSwiftPackageReferenceIds
+                .map { (key: $0.key, value: $0.value, isLocal: false)} +
+            localSwiftPackageReferenceIds
+                .map { (key: $0.key, value: $0.value, isLocal: true)}
+
+        let pathsByName = try elements
+            .filter { $0.isLocal }
+            .reduce(into: [String: String]()) {
+                if let path = $1.dependency.localPath {
+                    $0[$1.dependency.name] = path
+                } else {
+                    throw Error.missingProperty
+                }
+            }
+
+        let combinedPackageReferenceIds = try combinedIds
+            .sorted { $0.key < $1.key }
+            .map {
+                if $0.isLocal {
+                    guard let path = pathsByName[$0.key] else {
+                        throw Error.missingProperty
+                    }
+                    return $0.value.commented("XCLocalSwiftPackageReference \"\(path)\"")
+                } else {
+                    return $0.value.commented("XCRemoteSwiftPackageReference \"\($0.key)\"")
+                }
+            }
+
         if let files = project.object(for: "packageReferences") {
-            // TODO: - Implement
-            assertionFailure("Implement")
+            let index = try project.objectPropertyRanges(for: "packageReferences").inner.upperBound
+            // TODO: sort
+            let writeElements = combinedPackageReferenceIds
+                .map { NewXProjArrayElement(value: $0) }
+                .map { XProjWriteElement(index: index, indent: 4, object: $0) }
+            remoteSwiftPackageReferenceIdsObjects += writeElements
         } else {
             // TODO: Insert alphabetically
             let index = try project.indexForNewProperty(named: "packageReferences")
 
-            let combinedIds = remoteSwiftPackageReferenceIds
-                    .map { (key: $0.key, value: $0.value, isLocal: false)} +
-                localSwiftPackageReferenceIds
-                    .map { (key: $0.key, value: $0.value, isLocal: true)}
-
-            let pathsByName = try elements
-                .filter { $0.isLocal }
-                .reduce(into: [String: String]()) {
-                    if let path = $1.dependency.localPath {
-                        $0[$1.dependency.name] = path
-                    } else {
-                        throw Error.missingProperty
-                    }
-                }
-
-            let ids = try combinedIds
-                .sorted { $0.key < $1.key }
-                .map {
-                    if $0.isLocal {
-                        guard let path = pathsByName[$0.key] else {
-                            throw Error.missingProperty
-                        }
-                        return $0.value.commented("XCLocalSwiftPackageReference \"\(path)\"")
-                    } else {
-                        return $0.value.commented("XCRemoteSwiftPackageReference \"\($0.key)\"")
-                    }
-                }
-
-            let packageReferencesProperty = NewXProjProperty(key: "packageReferences", value: ids)
+            let packageReferencesProperty = NewXProjProperty(key: "packageReferences", value: combinedPackageReferenceIds)
             let writeElement = XProjWriteElement(
                 index: index,
                 indent: 3,
