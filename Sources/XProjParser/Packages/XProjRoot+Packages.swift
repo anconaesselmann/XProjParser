@@ -358,7 +358,7 @@ public extension XProjRoot {
             try? self.sectionRanges(for: .XCLocalSwiftPackageReference),
             try? self.sectionRanges(for: .XCRemoteSwiftPackageReference),
             try self.sectionRanges(for: .XCSwiftPackageProductDependency),
-            try project.objectPropertyRanges(for: "packageReferences")
+            try? project.objectPropertyRanges(for: "packageReferences")
         ]
         containers += try targetNames.map {
             guard let target = firstElement(
@@ -401,12 +401,16 @@ public extension XProjRoot {
         guard let project = firstElement(withIsa: .PBXProject) else {
             throw XProjRootError.missingProperty
         }
-        let localPackageReferenceArrayElements = try localPackageReferenceIds.map {
-            try project
-                .array(for: "packageReferences")
-                .element(where: $0)
+        do {
+            let localPackageReferenceArrayElements = try localPackageReferenceIds.map {
+                try project
+                    .array(for: "packageReferences")
+                    .element(where: $0)
+            }
+            ranged += localPackageReferenceArrayElements
+        } catch {
+            print(error)
         }
-        ranged += localPackageReferenceArrayElements
         return ranged.compactMap { $0 }
     }
 
