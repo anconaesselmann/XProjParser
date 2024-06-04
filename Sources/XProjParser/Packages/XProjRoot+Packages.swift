@@ -50,7 +50,7 @@ public extension XProjRoot {
                     let frameworkId = frameworkIds.intersection(buildPhases).first,
                     let framework = frameworksById[frameworkId]
                 else {
-                    throw Error.missingProperty
+                    throw Error.missingFrameworkEntryInTarget(name)
                 }
                 $0[name] = framework
             }
@@ -68,14 +68,14 @@ public extension XProjRoot {
 
             if element.isLocal {
                 guard let localPath = localPath else {
-                    throw Error.missingProperty
+                    throw Error.missingLocalPathForDependency(name)
                 }
                 if localSwiftPackageReferenceIds[name] == nil {
                     let lastElementIndex = self.elements(withIsa: .XCLocalSwiftPackageReference)
                         .last?.range.upperBound
                     createLocalSwiftPackageReferenceSectionHeaders = lastElementIndex == nil
                     guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
-                        throw Error.missingProperty
+                        throw Error.missingSection(.XCLocalSwiftPackageReference)
                     }
                     let id = XProjId(localIdFrom: elementId)
                     let writeElement = XProjWriteElement(
@@ -97,7 +97,7 @@ public extension XProjRoot {
                         .last?.range.upperBound
                     createRemoteSwiftPackageReferenceSectionHeaders = lastElementIndex == nil
                     guard let index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
-                        throw Error.missingProperty
+                        throw Error.missingSection(.XCRemoteSwiftPackageReference)
                     }
                     let id = XProjId(remoteIdFrom: elementId)
                     remoteSwiftPackageReferenceId = id
@@ -129,7 +129,7 @@ public extension XProjRoot {
             let lastElementIndex = self.elements(withIsa: .XCSwiftPackageProductDependency).last?.range.upperBound
             createPackageProductDependencySectionHeaders = lastElementIndex == nil
             guard var index = lastElementIndex ?? self.sectionComments.last?.range.upperBound else {
-                throw Error.missingProperty
+                throw Error.missingSection(.XCSwiftPackageProductDependency)
             }
             var writeElement = XProjWriteElement(
                 index: index,
@@ -167,10 +167,10 @@ public extension XProjRoot {
             // 2 PBXFrameworksBuildPhase
 
             guard let framework = frameworks[element.targetName] else {
-                throw Error.missingProperty
+                throw Error.missingFrameworkEntryInTarget(element.targetName)
             }
             guard let files = framework.object(for: "files") else {
-                throw Error.missingProperty
+                throw Error.missingFilesArrayForFrameworkInTarget(element.targetName)
             }
             index = files.elements.isEmpty
                 ? files.elementsRange.lowerBound
@@ -185,7 +185,7 @@ public extension XProjRoot {
         }
 
         guard let project = firstElement(withIsa: .PBXProject) else {
-            throw XProjRootError.missingProperty
+            throw XProjRootError.missingElement(.PBXProject)
         }
 
         let elementsByTarget = elements.reduce(into: [String: [XProjDependency]]()) {
@@ -208,8 +208,10 @@ public extension XProjRoot {
                 }
                 return id.commented($0.name)
             }
-            if let packageProductDependenciesArray = try? target.array(for: "packageProductDependencies") {
-                let index = try target.objectPropertyRanges(for: "packageProductDependencies").inner.upperBound
+            if let packageProductDependenciesObject = try? target.object(for: "packageProductDependencies") {
+                let index = packageProductDependenciesObject.elements.isEmpty
+                    ? packageProductDependenciesObject.elementsRange.lowerBound
+                    : packageProductDependenciesObject.elements.last!.range.upperBound
                 // TODO: sort
                 let writeElements = ids
                     .map { NewXProjArrayElement(value: $0) }
@@ -259,7 +261,9 @@ public extension XProjRoot {
             }
 
         if let files = project.object(for: "packageReferences") {
-            let index = try project.objectPropertyRanges(for: "packageReferences").inner.upperBound
+            let index = files.elements.isEmpty
+                ? files.elementsRange.lowerBound
+                : files.elements.last!.range.upperBound
             // TODO: sort
             let writeElements = combinedPackageReferenceIds
                 .map { NewXProjArrayElement(value: $0) }
@@ -409,7 +413,7 @@ public extension XProjRoot {
             }
             ranged += localPackageReferenceArrayElements
         } catch {
-            print(error)
+            print("No packageReferences array found.")
         }
         return ranged.compactMap { $0 }
     }
@@ -451,7 +455,7 @@ public extension XProjRoot {
                     .array(for: "packageReferences")
                     .element(where: packageId)
             } catch {
-                print(error)
+                print("No packageReferences array found.")
             }
             let buildPhaseArrayElements = try target.array(for: "buildPhases")
             let buildPhaseId = try buildPhaseArrayElements.first {

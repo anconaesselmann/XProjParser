@@ -12,6 +12,11 @@ public extension XProjRoot {
 
     enum Error: Swift.Error {
         case missingProperty
+        case missingFrameworkEntryInTarget(String)
+        case missingLocalPathForDependency(String)
+        case missingSection(XProjIsa)
+        case missingFilesArrayForFrameworkInTarget(String)
+        case missingElement(XProjIsa)
     }
 
     var objects: [XProjObject] {
@@ -112,6 +117,7 @@ enum XProjRootError: Error {
     case missingBuildFile
     case missingProperty
     case invalidSectionComments
+    case missingElement(XProjIsa)
 }
 
 public extension String {
