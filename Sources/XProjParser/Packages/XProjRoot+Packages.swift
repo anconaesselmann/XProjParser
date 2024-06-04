@@ -204,7 +204,7 @@ public extension XProjRoot {
             }
             let ids: [XProjId] = try dependencies.map {
                 guard let id = packageProductDependencyIds[targetName]?[$0.name] else {
-                    throw Error.missingProperty
+                    throw Error.missingProductDependency($0.name)
                 }
                 return id.commented($0.name)
             }
@@ -243,7 +243,7 @@ public extension XProjRoot {
                 if let path = $1.dependency.localPath {
                     $0[$1.dependency.name] = path
                 } else {
-                    throw Error.missingProperty
+                    throw Error.missingLocalPathForDependency($1.dependency.name)
                 }
             }
 
@@ -252,7 +252,7 @@ public extension XProjRoot {
             .map {
                 if $0.isLocal {
                     guard let path = pathsByName[$0.key] else {
-                        throw Error.missingProperty
+                        throw Error.missingLocalPathForDependency($0.key)
                     }
                     return $0.value.commented("XCLocalSwiftPackageReference \"\(path)\"")
                 } else {
@@ -355,7 +355,7 @@ public extension XProjRoot {
         throws -> [(outer: Range<String.Index>, inner: Range<String.Index>)]
     {
         guard let project = firstElement(withIsa: .PBXProject) else {
-            throw XProjRootError.missingProperty
+            throw XProjRootError.missingElement(.PBXProject)
         }
 
         var containers: [(outer: Range<String.Index>, inner: Range<String.Index>)?] = [
@@ -403,7 +403,7 @@ public extension XProjRoot {
         }
         ranged += try localPackageReferenceIds.map { try self.element(withId: $0)}
         guard let project = firstElement(withIsa: .PBXProject) else {
-            throw XProjRootError.missingProperty
+            throw XProjRootError.missingElement(.PBXProject)
         }
         do {
             let localPackageReferenceArrayElements = try localPackageReferenceIds.map {
@@ -449,7 +449,7 @@ public extension XProjRoot {
                 let packageId = try packageProductDependency.id(for: "package")
                 remotePackageReference = try element(withId: packageId)
                 guard let project = firstElement(withIsa: .PBXProject) else {
-                    throw XProjRootError.missingProperty
+                    throw XProjRootError.missingElement(.PBXProject)
                 }
                 dependencyArrayElement = try project
                     .array(for: "packageReferences")

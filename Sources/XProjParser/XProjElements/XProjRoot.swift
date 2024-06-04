@@ -11,9 +11,10 @@ public struct XProjRoot: Ranged {
 public extension XProjRoot {
 
     enum Error: Swift.Error {
-        case missingProperty
+        case missingProperty(String)
         case missingFrameworkEntryInTarget(String)
         case missingLocalPathForDependency(String)
+        case missingProductDependency(String)
         case missingSection(XProjIsa)
         case missingFilesArrayForFrameworkInTarget(String)
         case missingElement(XProjIsa)
@@ -42,7 +43,7 @@ public extension XProjRoot {
         guard let element = objects
             .first(where: { $0.key == id.stringValue} )
         else {
-            throw Error.missingProperty
+            throw Error.missingProperty(id.stringValue)
         }
         return element
     }
@@ -115,7 +116,7 @@ public extension XProjRoot {
 enum XProjRootError: Error {
     case missingTargetWithName(String)
     case missingBuildFile
-    case missingProperty
+    case missingProperty(String)
     case invalidSectionComments
     case missingElement(XProjIsa)
 }
