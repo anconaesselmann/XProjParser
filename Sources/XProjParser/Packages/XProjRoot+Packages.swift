@@ -325,18 +325,22 @@ public extension XProjRoot {
         var containers = try packageContainers(in: elements.map { $0.targetName })
         var ranges = try elements
             .reduce(into: [Range<String.Index>]()) {
-                $0 += try remotePackageEntries(
-                    for: $1.packageName,
-                    relativePath: $1.relativePath,
-                    in: $1.targetName
-                )
-                .ranges()
-                $0 += try localPackageEntries(
-                    for: $1.packageName,
-                    relativePath: $1.relativePath,
-                    in: $1.targetName
-                )
-                .ranges()
+                do {
+                    $0 += try remotePackageEntries(
+                        for: $1.packageName,
+                        relativePath: $1.relativePath,
+                        in: $1.targetName
+                    )
+                    .ranges()
+                    $0 += try localPackageEntries(
+                        for: $1.packageName,
+                        relativePath: $1.relativePath,
+                        in: $1.targetName
+                    )
+                    .ranges()
+                } catch Error.missingProperty, XProjObject.Error.missingProperty {
+                    print("no existing packages")
+                }
             }
             .merged()
             .map {
@@ -361,7 +365,7 @@ public extension XProjRoot {
         var containers: [(outer: Range<String.Index>, inner: Range<String.Index>)?] = [
             try? self.sectionRanges(for: .XCLocalSwiftPackageReference),
             try? self.sectionRanges(for: .XCRemoteSwiftPackageReference),
-            try self.sectionRanges(for: .XCSwiftPackageProductDependency),
+            try? self.sectionRanges(for: .XCSwiftPackageProductDependency),
             try? project.objectPropertyRanges(for: "packageReferences")
         ]
         containers += try targetNames.map {
@@ -375,7 +379,7 @@ public extension XProjRoot {
             return target
         }
         .map {
-            try $0.objectPropertyRanges(for: "packageProductDependencies")
+            try? $0.objectPropertyRanges(for: "packageProductDependencies")
         }
         return containers.compactMap { $0 }
     }
