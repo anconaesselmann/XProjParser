@@ -27,6 +27,10 @@ let package = Package(
         ),
         .testTarget(
             name: "XProjParserTests",
-            dependencies: ["XProjParser"]),
+            dependencies: ["XProjParser"],
+            resources: [
+                .copy("Resources/01_project.pbxproj")
+            ]
+        ),
     ]
 )
