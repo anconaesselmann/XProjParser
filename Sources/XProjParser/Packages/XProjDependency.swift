@@ -8,7 +8,11 @@ public struct XProjDependency {
     public let name: String
     internal let url: String?
     internal let version: String?
-    internal let localPath: String?
+    internal var localPath: String?
+
+    public var hasLocalPath: Bool {
+        localPath != nil && !(localPath?.isEmpty ?? true)
+    }
 
     public init(id: UUID = UUID(), name: String, url: String, version: String) {
         self.id = id
@@ -32,5 +36,19 @@ public struct XProjDependency {
         self.url = nil
         self.version = nil
         self.localPath = localPath
+    }
+
+    public init(id: UUID = UUID(), name: String) {
+        self.id = id
+        self.name = name
+        self.url = nil
+        self.version = nil
+        self.localPath = nil
+    }
+
+    public func withLocalRoot(_ localRoot: String) -> Self {
+        var copy = self
+        copy.localPath = localRoot + name
+        return copy
     }
 }

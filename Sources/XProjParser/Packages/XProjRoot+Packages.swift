@@ -413,7 +413,7 @@ public extension XProjRoot {
             }
             ranged += localPackageReferenceArrayElements
         } catch {
-            print("No packageReferences array found.")
+//            print("No packageReferences array found.")
         }
         return ranged.compactMap { $0 }
     }
@@ -455,7 +455,7 @@ public extension XProjRoot {
                     .array(for: "packageReferences")
                     .element(where: packageId)
             } catch {
-                print("No packageReferences array found.")
+//                print("No packageReferences array found.")
             }
             let buildPhaseArrayElements = try target.array(for: "buildPhases")
             let buildPhaseId = try buildPhaseArrayElements.first {
