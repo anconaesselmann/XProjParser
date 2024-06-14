@@ -7,7 +7,7 @@ public extension XProjRoot {
 
     func addPackages(
         in content: String,
-        _ elements: [(dependency: XProjDependency, isLocal: Bool, targetName: String)]
+        _ elements: [(dependency: XProjDependency, isLocal: Bool, needsVersion: Bool, targetName: String)]
     ) throws -> String {
         var content = content
         var localSwiftPackageReferenceObjects: [XProjWriteElement] = []
@@ -121,7 +121,7 @@ public extension XProjRoot {
                 packageProductDependencyIds[element.targetName] = [:]
             }
             packageProductDependencyIds[element.targetName]?[name] = packageProductDependencyId
-            let packageProductDependency =  NewXProjProperty(
+            let packageProductDependency = NewXProjProperty(
                 packageProductDependencyId: packageProductDependencyId,
                 remoteSwiftPackageReferenceId: remoteSwiftPackageReferenceId,
                 name: name
@@ -316,7 +316,7 @@ public extension XProjRoot {
 
     func addPackages(
         in content: String,
-        _ elements: (dependency: XProjDependency, isLocal: Bool, targetName: String)...
+        _ elements: (dependency: XProjDependency, isLocal: Bool, needsVersion: Bool, targetName: String)...
     ) throws -> String {
         try addPackages(in: content, elements)
     }
