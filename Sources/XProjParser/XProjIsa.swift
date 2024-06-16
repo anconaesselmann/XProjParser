@@ -5,7 +5,7 @@ import Foundation
 
 public enum XProjIsa: Identifiable, Equatable {
 
-    case PBXBuildFile, PBXFileReference, PBXFrameworksBuildPhase, PBXGroup, PBXNativeTarget, PBXProject, PBXResourcesBuildPhase, XCBuildConfiguration, XCConfigurationList, XCRemoteSwiftPackageReference, XCLocalSwiftPackageReference, XCSwiftPackageProductDependency
+    case PBXBuildFile, PBXFileReference, PBXFrameworksBuildPhase, PBXGroup, PBXNativeTarget, PBXProject, PBXResourcesBuildPhase, PBXSourcesBuildPhase, XCBuildConfiguration, XCConfigurationList, XCRemoteSwiftPackageReference, XCLocalSwiftPackageReference, XCSwiftPackageProductDependency
     case other(String)
 
     public var id: String {
@@ -28,6 +28,8 @@ public enum XProjIsa: Identifiable, Equatable {
             return "PBXProject"
         case .PBXResourcesBuildPhase:
             return "PBXResourcesBuildPhase"
+        case .PBXSourcesBuildPhase:
+            return "PBXSourcesBuildPhase"
         case .XCBuildConfiguration:
             return "XCBuildConfiguration"
         case .XCConfigurationList:
@@ -60,6 +62,8 @@ public enum XProjIsa: Identifiable, Equatable {
             self = .PBXProject
         case "PBXResourcesBuildPhase":
             self = .PBXResourcesBuildPhase
+        case "PBXSourcesBuildPhase":
+            self = .PBXSourcesBuildPhase
         case "XCBuildConfiguration":
             self = .XCBuildConfiguration
         case "XCConfigurationList":
