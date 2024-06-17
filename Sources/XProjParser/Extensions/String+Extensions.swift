@@ -11,3 +11,13 @@ extension String {
         self += Array(repeating: "\t", count: count).joined()
     }
 }
+
+extension StringProtocol {
+    func trimmingQuotes() -> String {
+        if self.hasPrefix("\""), self.hasSuffix("\"") {
+            return String(self.dropFirst(1).dropLast(1))
+        } else {
+            return String(self)
+        }
+    }
+}

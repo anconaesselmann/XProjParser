@@ -21,8 +21,9 @@ public extension XProjRoot {
     }
 
     func groupPath(_ name: String, in content: String) throws -> String {
+        var name = name.trimmingQuotes()
         let mainGroup = try groups(in: content)
-        guard let packageGroup = mainGroup.child(where: { $0.name == name || $0.path == name}) else {
+        guard let packageGroup = mainGroup.child(where: { $0.equals(nameOrGroup: name) }) else {
             throw GroupError.missingGroup(name)
         }
         var current = packageGroup
@@ -45,9 +46,10 @@ public extension XProjRoot {
 
     func removeGroup(_ name: String, in content: String) throws -> String {
         // TODO: Make sure name is unique in groups. Do this before moving the directory!
+        var name = name.trimmingQuotes()
         var content = content
         let mainGroup = try groups(in: content)
-        guard let packageGroup = mainGroup.child(where: { $0.name == name || $0.path == name}) else {
+        guard let packageGroup = mainGroup.child(where: { $0.equals(nameOrGroup: name) }) else {
             throw GroupError.missingGroup(name)
         }
         let ids = packageGroup.ids()

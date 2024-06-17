@@ -45,4 +45,12 @@ public extension XProjGroup {
     func ids() -> [XProjId] {
         [id] + children.flatMap { $0.ids() }
     }
+
+    func equals(nameOrGroup name: String) -> Bool {
+        let groupName = self.name?.trimmingQuotes()
+        let groupPath = self.path?.trimmingQuotes()
+        return
+            groupName == name ||
+            groupPath == name
+    }
 }
