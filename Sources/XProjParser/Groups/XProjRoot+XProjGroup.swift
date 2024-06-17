@@ -9,13 +9,38 @@ public extension XProjRoot {
         case missingGroup(String)
         case missingParentGroup
         case missingEntryInFile(String)
+        case missingNameOrGroup
     }
+    
     func groups(in content: String) throws -> XProjGroup {
         guard let project = firstElement(withIsa: .PBXProject) else {
             throw XProjRootError.missingElement(.PBXProject)
         }
         let mainGroupId = try project.id(for: "mainGroup")
         return try resolve(id: mainGroupId)
+    }
+
+    func groupPath(_ name: String, in content: String) throws -> String {
+        let mainGroup = try groups(in: content)
+        guard let packageGroup = mainGroup.child(where: { $0.name == name || $0.path == name}) else {
+            throw GroupError.missingGroup(name)
+        }
+        var current = packageGroup
+        var parentId = packageGroup.parentId
+        var pathComponents: [String] = []
+        while parentId != nil {
+            guard let path = current.path ?? current.name else {
+                break
+            }
+            pathComponents.append(path)
+            parentId = current.parentId
+            if let XProjGroup = parentId {
+                current = try resolve(id: XProjGroup)
+            }
+        }
+        return pathComponents
+            .reversed()
+            .joined(separator: "/")
     }
 
     func removeGroup(_ name: String, in content: String) throws -> String {
