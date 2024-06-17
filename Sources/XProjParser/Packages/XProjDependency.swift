@@ -30,7 +30,7 @@ public struct XProjDependency {
 
     public func withLocalRoot(_ localRoot: String) -> Self {
         var copy = self
-        copy.localPath = localRoot + name
+        copy.localPath = localRoot.appendedIfNecessary("/") + name
         return copy
     }
 }
