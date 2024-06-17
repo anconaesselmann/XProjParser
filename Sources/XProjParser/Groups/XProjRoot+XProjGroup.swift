@@ -35,13 +35,19 @@ public extension XProjRoot {
             }
             pathComponents.append(path)
             parentId = current.parentId
-            if let XProjGroup = parentId {
-                current = try resolve(id: XProjGroup)
+            if
+                let parentId = parentId,
+                let parent = try mainGroup.child(where: { $0.id == parentId })
+            {
+                current = parent
+            } else {
+                parentId = nil
             }
         }
-        return pathComponents
+        let path = pathComponents
             .reversed()
             .joined(separator: "/")
+        return path
     }
 
     func removeGroup(_ name: String, in content: String) throws -> String {
